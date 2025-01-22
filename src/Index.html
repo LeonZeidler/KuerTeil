@@ -1,0 +1,63 @@
+<!Doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Website</title>
+        <style>
+            body{
+                margin: 0px;
+            }
+            .container{
+                position: absolute;
+                width:15%;
+                margin:auto;
+                height:13%;
+                border: 2px;
+                background-color:chocolate;
+                left: 80%;
+                 top: 15%;
+            }
+            .output{
+                text-align: left;
+                font-size: 1.6em;
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+                font-weight: bold;
+            }
+
+            .gameOver{
+                position: absolute;
+                width:25%;
+                margin:auto;
+                height:13%;
+                border: 2px;
+                background-color:burlywood;
+                left: 40%;
+                right:40%;
+                top: 25%;
+                display: none;
+                text-align: center;
+                font-size: 1.6em; 
+                font-weight: bold;
+            }
+
+            
+        </style>
+            <script type="text/javascript" charset="UTF-8" src="../libs/three/three.js"></script>
+            <script type="text/javascript" charset="UTF-8" src="../libs/three/loaders/OBJLoader.js"></script>
+            <script type="text/javascript" charset="UTF-8" src="../libs/three/loaders/MTLLoader.js"></script>
+            <script type="text/javascript" charset="UTF-8" src="Util.js"></script>
+            <script type="module" src="script.js"></script>
+        
+        
+    </head>
+    <body>
+        <div class="container">
+        <div class="output" id="points" > 0 </div>
+        <div class="output" id="combo" > 0 </div>
+        <div class="output" id="multiplikator"> 1 </div>
+        <div class="output" id="life">3</div>
+        </div>
+        <div class="gameOver" id="gameOver"> lol</div>
+        
+    </body>
+</html>
