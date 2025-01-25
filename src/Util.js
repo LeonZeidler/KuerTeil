@@ -1,20 +1,53 @@
 
-//Target update Function zählt auch die punkte
+// initialiere benötigte Globale variablen
 var Life= 3;
-var hit ;
-var registered;
+var hit;  // boolean wird target berührt
+var registered; // boolean wurde target bereits ausgewertet
 var multiplier = 1.0;
 var punkte = 0;
 var combo = 0;
-// Materialien für Spielerposition
+// Materialien für Spielerobjekt
 const cubeGeometry = new THREE.BoxGeometry(3,0.5,1); 
 const cubeMaterial = new THREE.MeshStandardMaterial({
     color: 'pink'
 });
+// Materialien für ZielObjekte
+const sphereRadius = 2.5;
+const sphereWidthSegments = 32;
+const sphereHeightSegments = 16;
+const sphereGeometry = new THREE.SphereGeometry(
+    sphereRadius,
+    sphereWidthSegments,
+    sphereHeightSegments
+);
+const sphereMaterial = new THREE.MeshStandardMaterial({
+    color: 'tan',
+
+});
 
 
+/*
+    Update Funktion- bewegt ziele und wertet Treffer aus
+
+    beginnt mit der Arbeit wenn ein Target den Spieler passiert.
+    Wenn der Spieler das target berührt hatte bevor es ihn passiert wird das Ziel als getroffen gewertet.
+    Es werden punkte vergeben die zuvor mit dem Aktuelle modifikator multipliziert werden(standard 100 pkt x 1.0 mod)
+    Anschließend werden der combo-zähler um 1, und der Multiplikator um 0.1 erhöht. 
+    danach wird es als registriert gesetzt um das mehrfache vergeben von punkten zu verhindern
+
+    Hat der Spieler das Ziel nicht berührt wird es als verfehlt gewertet .
+    Der spieler erhält keine Punkte und der modifikator sowie der Combozähler werden auf standard zurück gesetzt, außerdem
+    verliert der spieler ein Leben
+    Danach wird das ziel als registriert gesetzt um zu verhindern das der Spieler mehr als ein Leben verliert.
 
 
+    Sobald das ziel sich hinter der Kamera befindet werden zwei  zufallszahlen gewürfelt. Die Erste bestimmt die neue horizontale
+    Position des Ziels und die Zweite die neue Vertikale Position des Ziels.
+    (Horizontale und Vertikale Position sind begrenzt um ein Faires Spiel zu gewährleisten)
+
+    Danach wird das Ziel an den Horizont bewegt um den Prozess von Vorne zu beginnen
+
+*/
 function update(target){
     if(target.position.z<=30){
         target.position.z += 0.2;
@@ -100,7 +133,12 @@ function update(target){
             hit= false;
         }
 }
-//Shadow Setup
+/*
+Shadow Setup
+
+Erstellt ein Directionallight und richtet den Schattenbereich so aus, dass alle Ziele und der Spieler einen Schatten werfen können
+
+*/
 function shadowsetup(scene){
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
 directionalLight.castShadow =true;
@@ -112,7 +150,11 @@ directionalLight.shadow.camera.right = 20;
 scene.add(directionalLight);
 }
 
-// function für hitdetection
+/* 
+funKtion für hitdetection
+
+prüft ob die Boundingboxen des Spielers die eines ziels berührt und setzt den Hit-boolean auf true
+*/
 function hitdetect(Alice, Bob) {
     if (Alice.intersectsSphere(Bob)==true){
         hit= true;
@@ -121,7 +163,7 @@ function hitdetect(Alice, Bob) {
         return false;
     }
 }
-
+// updatet die Statistik Anzeige mit den aktuellen Werten
 function updateStats(){
     var pnt = document.getElementById("points");
     var mlt = document.getElementById("multiplikator");
@@ -133,6 +175,14 @@ function updateStats(){
     lfe.innerHTML = "Leben: " + Life;
 }
 
+/*
+Gegenwirkung zur Rotation durch die Steuerung
+
+Prüft die aktuelle Rotationsausrichtung des Flugzeugs und reagiert entsprechend
+
+wenn der spieler nach links zeigt, wird nach rechts gedreht bis neutral
+wenn der Spieler nach oben zeigt, wird nach unten gedreht usw.
+*/
 function rotationUpdate(player){
     if (player.rotation.x>0){
         player.rotation.x -= 0.01;
@@ -148,7 +198,7 @@ function rotationUpdate(player){
 
 }
 
-
+// Blendet den game-over Screen ein und gibt die finale Punktzahl aus
 function gameOver(){
     var goString =" Du Hast Verloren! </br> Deine erreichten Punkte: </br> "+ Math.floor(punkte)+"</br> Gut gespielt!";
 

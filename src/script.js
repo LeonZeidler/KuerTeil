@@ -1,7 +1,7 @@
 
 
 
-//Renderer Setup
+//Renderer setup
 const renderer = new THREE.WebGLRenderer({antialas: true});
 renderer.setClearColor(new THREE.Color(0xb0e0e6));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -9,25 +9,35 @@ renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 
-//Scene
+/*
+Scene setup
+
+Nebel setup - soll den "pop-in"-Effekt der Zielringe am Horizont verstecken
+*/
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0xffffff, 15, 115);
 
+//Grundbeleuchtung
+const ambientLight = new THREE.AmbientLight(0xffffff);
+scene.add(ambientLight);
 
-//Kamera
+//Funktion zum Setup für den Schattenwurf
+shadowsetup(scene);
+
+//Kamera setup
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / innerHeight, 0.1, 100);
 camera.position.y = 13;
 camera.position.z = 28;
 camera.position.x = 0;
 
 
-//loader einrichten
+//loader setup
 const textureLoader = new THREE.TextureLoader();
 const modelLoader =new THREE.OBJLoader();
 const modelMTLLoader= new THREE.MTLLoader();
 
 
-// Bodentextur
+// Bodentextur-und Material
 const groundTex = textureLoader.load('../textures/Ground.jpg');
 groundTex.wrapS = THREE.RepeatWrapping;
 groundTex.wrapT = THREE.RepeatWrapping;
@@ -37,7 +47,12 @@ const bodenMaterial = new THREE.MeshStandardMaterial({
     map: groundTex 
 
 });
-//Boden
+/*
+Boden
+
+Der Boden ist ein auf der Seite liegender Zylinder der sich rückwärts dreht.
+mit entsprechender Kamerapositionierung, soll dadurch der Eindruck einer Vorwärtsbewegung enstehen, obwohl die Kamera still steht.
+*/
 const boden = new THREE.Mesh(bodenGeometry, bodenMaterial);
 scene.add(boden);
 boden.position.y = -102;
@@ -51,7 +66,12 @@ skyTEX.wrapS = THREE.RepeatWrapping;
 skyTEX.wrapT = THREE.RepeatWrapping;
 skyTEX.repeat.set(10,5);
 
-// Skybox
+/*
+Skydome
+
+Eine große Kugel, die die gesamte Szene umgibt. Sie wirft keinen Schatten und ist von innen Texturiert.
+Von innen ensteht so ein Eindruck eines Himmels.
+*/ 
 const SkyboxGeometrie = new THREE.SphereGeometry(70, 40, 20);
 const SkyboxMaterial = new THREE.MeshPhongMaterial({
     map: skyTEX,
@@ -63,35 +83,32 @@ scene.add(Skybox);
 
 
 
+/*
+Spieler Hinzufügen
 
-// Platzhalter für ziele
-const sphereRadius = 2.5;
-const sphereWidthSegments = 32;
-const sphereHeightSegments = 16;
-const sphereGeometry = new THREE.SphereGeometry(
-    sphereRadius,
-    sphereWidthSegments,
-    sphereHeightSegments
-);
-const sphereMaterial = new THREE.MeshStandardMaterial({
-    color: 'tan',
-
-});
-
-
-
-//Spieler Hinzufügen
+Fügt ein Unsichtbares objekt hinzu, dass den Spieler Representiert und berechnet die zugehörige Boundingbox
+für die Hit-detection.
+*/
 const player = new THREE.Mesh(cubeGeometry, cubeMaterial);
 player.position.set(0 , 5 , 10);
 player.visible = false;
 scene.add(player);
 player.geometry.computeBoundingBox();
 
-//Spieler Hitbox erstellen
+/*
+Hitbox
+
+erstellt ein Hitboxobjekt aus dem Unsichtbaren Spielerobjekt und der berechneten Boundingbox 
+*/
 let playerHB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 playerHB.setFromObject(player);
 
-//Spieler Modell laden
+/*
+Spieler Modell laden
+
+Lädt das Flugzeugmodell und richtet es aus.
+verwendet den Renderer um das Modell dem Spielerobjekt Folgen zu lassen.
+*/
 modelMTLLoader.load('../models/AirShip.mtl', function(materials){
     materials.preload();
     modelLoader.setMaterials(materials);
@@ -123,7 +140,14 @@ modelMTLLoader.load('../models/AirShip.mtl', function(materials){
 
 
 
-// 3 Ziele Hinzufügen
+/*
+3 Ziele Hinzufügen
+
+Erstellt drei unsichtbare Kugeln, die die Ziele Repräsentieren.
+Berechnet außerdem die Boundingbox für jedes Ziel, für die Hit-detection
+
+als Letztes wird für jedes ziel die loadTargetModel funktion aufgerufen um den Zielen ihr Modell zuzuweisen
+*/
 const target1 = new THREE.Mesh(sphereGeometry, sphereMaterial);
 target1.position.set(0, 5, 0);
 target1.visible = false;
@@ -140,21 +164,30 @@ target3.visible = false;
 scene.add(target3);
 loadTargetModel(target3);
 
-// compute boundigboxes for hitdetection
+//  boundingboxes
 target1.geometry.computeBoundingBox();
 target2.geometry.computeBoundingBox();
 target3.geometry.computeBoundingBox();
 
-//Target Hitboxes
+// Erstellt die Hitboxobjekte aus den target objekten
 let target1HB = new THREE.Sphere(target1.position, 3);
 let target2HB = new THREE.Sphere(target2.position, 3);
 let target3HB = new THREE.Sphere(target3.position, 3);
 
-//lädt das Ringmodel für die Ziele
+//lädt die Goldtextur für die Zielmodelle
 const ringTex= textureLoader.load('../textures/gold.jpg');
 ringTex.wrapS = THREE.RepeatWrapping;
 ringTex.wrapT = THREE.RepeatWrapping;
 ringTex.repeat.set(10,20);
+
+/*
+Funktion zum laden der Ringmodelle
+
+Nimmt ein target-Objekt.
+Lädt das Ringmodell; positioniert und Texturiert es.
+
+Verwendet den Renderer um den nun geladenen Ring seinem zugehörigen Zielobjekt folgen zu lassen.
+*/
 function loadTargetModel(target){
     modelLoader.load('../models/circle.obj',function(mesh){
         var material = new THREE.MeshStandardMaterial({
@@ -179,7 +212,17 @@ function loadTargetModel(target){
     });
 }
 
-//Spielersteuerung Event-listener
+/*
+Spielersteuerung Event-listener
+
+Implementiert einen Event-Listener der auf Tastendruck reagiert
+
+Wen eine Pfeiltaste gedrückt wird, bewegt sich das Flugzeug in die enstsprechende Richtung
+(bewegung nach links oder rechts ist Schneller als hoch oder Runter. Außerdem ist der Bereeich in dem sich der Spieler bewegen kann in alle vier Richtungen begrenzt)
+Des weiteren wird das Flugzeug in die Entsprechende Richtung geneigt. Daurch soll ein dynamischerer Eindruck enstehen und es soll so ausehen, als ob das Flugzeug sich tatsächlich
+in der Luft befindet.
+(die Neigung nach links und Rechts ist ebenfalls beschränkt damit das Flugzeug sich nicht überschlägt)
+*/
 document.addEventListener("keydown", onDocumentKeyDown, false); 
 
 function onDocumentKeyDown(e){
@@ -215,30 +258,43 @@ function onDocumentKeyDown(e){
             
     }
 }
+
+// ausrichtung der Kamera
 camera.lookAt(player.position);
 
-shadowsetup(scene);
-const ambientLight = new THREE.AmbientLight(0xffffff);
-scene.add(ambientLight);
 
-camera.lookAt(player.position);
-//Renderfunktion
+//Main-Renderfunktion
 function render(){
-if(Life>0){    
+
+// main Gameplay loop - wird nur ausführt wenn der Spieler leben übrig hat
+if(Life>0){
+// bewegt die Ziele und vergibt Punkte    
 update(target1);
 update(target2);
 update(target3);
+
+// Rotiert den Boden-zylinder um vorwärtsbewegung vorzutäuschen
 boden.rotation.x +=0.002;
+
+// Benötigte Code Zeile um die Boundingbox des Spielers zu bewegen
 playerHB.copy( player.geometry.boundingBox).applyMatrix4(player.matrixWorld);
+
+// Gleicht die Rotation der Steuerung aus 
 rotationUpdate(player);
+
+// updatet das Statistikfenster
 updateStats();
+
+// Checkt ob der Spieler sich aktuell in einem Ring befindet
 hitdetect(playerHB, target1HB);
 hitdetect(playerHB, target2HB);
 hitdetect(playerHB, target3HB);
 
+// hällt die Kamera hinter dem Spieler
 camera.position.x=player.position.x;
 
 }else{
+// ruft den Game-over Screen auf und stoppt das Spiel
 gameOver();
 }    
 requestAnimationFrame(render);
